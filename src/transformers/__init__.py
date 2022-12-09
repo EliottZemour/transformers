@@ -884,6 +884,7 @@ else:
             "TopKLogitsWarper",
             "TopPLogitsWarper",
             "TypicalLogitsWarper",
+            "DexpertsLogitsWarper",
             "top_k_top_p_filtering",
         ]
     )
@@ -4060,6 +4061,7 @@ if TYPE_CHECKING:
             TopKLogitsWarper,
             TopPLogitsWarper,
             TypicalLogitsWarper,
+            DexpertsLogitsWarper,
             top_k_top_p_filtering,
         )
         from .modeling_utils import PreTrainedModel

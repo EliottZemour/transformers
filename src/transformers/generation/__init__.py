@@ -59,6 +59,7 @@ else:
         "TopKLogitsWarper",
         "TopPLogitsWarper",
         "TypicalLogitsWarper",
+        "DexpertsLogitsWarper",
         "EncoderNoRepeatNGramLogitsProcessor",
         "ExponentialDecayLengthPenalty",
         "LogitNormalization",
@@ -179,6 +180,7 @@ if TYPE_CHECKING:
             TopKLogitsWarper,
             TopPLogitsWarper,
             TypicalLogitsWarper,
+            DexpertsLogitsWarper,
         )
         from .stopping_criteria import (
             MaxLengthCriteria,

@@ -22,6 +22,7 @@ import torch
 
 from ..utils import add_start_docstrings
 from ..utils.logging import get_logger
+from ..models.auto.modeling_auto import AutoModelForCausalLM
 
 
 logger = get_logger(__name__)
@@ -281,6 +282,49 @@ class TypicalLogitsWarper(LogitsWarper):
         indices_to_remove = sorted_indices_to_remove.scatter(1, sorted_indices, sorted_indices_to_remove)
 
         scores = scores.masked_fill(indices_to_remove, self.filter_value)
+        return scores
+
+
+class DexpertsLogitsWarper(LogitsWarper):
+    r"""
+    [`LogitsWarper`] that applies the Dexperts algorithm to the logits. See [DExperts: Decoding-Time
+    Controlled Text Generation with Experts and Anti-Experts](https://arxiv.org/abs/2105.03023)
+    Args:
+        expert_model (:obj:`PreTrainedModel`):
+            The expert model to use for the Dexperts algorithm.
+        anti_expert_model (:obj:`PreTrainedModel`):
+            The anti-expert model to use for the Dexperts algorithm.
+        alpha (:obj:`float`):
+            The alpha parameter for the Dexperts algorithm.
+        
+    """
+
+    def __init__(self, expert_model, anti_expert_model, alpha, device): 
+        self.device = device
+        if anti_expert_model:
+            self.antiexpert = AutoModelForCausalLM.from_pretrained(anti_expert_model, use_auth_token=True).to(self.device)
+        else:
+            self.antiexpert = None
+        if expert_model:
+            self.expert = AutoModelForCausalLM.from_pretrained(expert_model, use_auth_token=True).to(self.device)
+        else:
+            self.expert = None
+        self.alpha = alpha
+
+    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
+        if self.expert:
+            expert_scores = self.expert(input_ids).logits[:, -1, :]
+        else:
+            expert_scores = scores
+        if self.antiexpert:
+            antiexpert_scores = self.antiexpert(input_ids).logits[:, -1, :]
+        else:
+            antiexpert_scores = scores
+
+        if self.antiexpert is not None or self.expert is not None:
+            scores = scores + self.alpha * (expert_scores - antiexpert_scores)
+        else:
+            scores = scores
         return scores
 
 
